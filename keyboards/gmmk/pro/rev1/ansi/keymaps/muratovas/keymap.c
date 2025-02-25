@@ -227,7 +227,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 
-void rgb_matrix_indicators_user() {
+bool rgb_matrix_indicators_user() {
     #if RGB_CONFIRMATION_BLINKING_TIME > 0
     if (effect_started_time > 0) {
         /* Render blinking EFFECTS */
@@ -241,7 +241,7 @@ void rgb_matrix_indicators_user() {
             if (host_keyboard_led_state().caps_lock) {
                 set_rgb_caps_leds();
             }
-            return;
+            return false;
         } else {
             /* EFFECTS duration is finished */
             effect_started_time = 0;
@@ -265,6 +265,7 @@ void rgb_matrix_indicators_user() {
     if (host_keyboard_led_state().caps_lock) {
         set_rgb_caps_leds();
     }
+    return true;
 }
 
 #if RGB_CONFIRMATION_BLINKING_TIME > 0
