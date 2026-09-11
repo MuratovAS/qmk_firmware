@@ -17,11 +17,20 @@
 
 #pragma once
 
+// https://github.com/qmk/qmk_firmware/blob/master/docs/feature_debounce_type.md
+// Used with DEBOUNCE_TYPE = asym_eager_defer_pk (see rules.mk): a key press is
+// reported immediately, a release only after DEBOUNCE ms without changes.
+// Raise this if a worn switch still produces double inputs (max. 127).
+#define DEBOUNCE 15
+
 // https://github.com/qmk/qmk_firmware/blob/master/docs/feature_rgb_matrix.md
 #ifdef RGB_MATRIX_ENABLE
 
-    // https://github.com/qmk/qmk_firmware/blob/master/docs/feature_rgblight.md
-    #define RGBLIGHT_HUE_STEP 1
+    // Steps for the RGB_HUI/RGB_HUD, RGB_SAI/RGB_SAD and RGB_VAI/RGB_VAD keys.
+    // Hue and saturation are 0-255, so the number of reachable colors is
+    // 256 / STEP: with the default step of 8 that is only 32 hues.
+    #define RGB_MATRIX_HUE_STEP 4   // 64 hues
+    #define RGB_MATRIX_SAT_STEP 8   // 32 saturation levels (default: 16)
     
     #define RGB_DISABLE_TIMEOUT 2400000     // 40 minutes (40 * 60 * 1000ms)
     #define RGB_DISABLE_WHEN_USB_SUSPENDED

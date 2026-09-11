@@ -84,6 +84,13 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     #ifndef RGB_CONFIRMATION_BLINKING_TIME
         #define RGB_CONFIRMATION_BLINKING_TIME 1000 // 1 seconds
     #endif
+    /* Hue/saturation the running effect is switched to while CAPS LOCK is ON */
+    #ifndef CAPS_LOCK_HUE
+        #define CAPS_LOCK_HUE 0   // red
+    #endif
+    #ifndef CAPS_LOCK_SAT
+        #define CAPS_LOCK_SAT 255
+    #endif
 #endif // RGB_MATRIX_ENABLE
 
 
@@ -94,6 +101,10 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 #define LED_FLAG_EFFECTS LED_FLAG_INDICATOR
 
 static void set_rgb_caps_leds(void);
+
+/* Color of the running effect saved before CAPS LOCK, restored when it goes OFF */
+static bool    caps_color_active = false;
+static uint8_t saved_hue = 0, saved_sat = 0;
 
 #if RGB_CONFIRMATION_BLINKING_TIME > 0
 static uint16_t effect_started_time = 0;
@@ -111,6 +122,29 @@ static void start_effects(void);
 #define effect_green() r_effect = 0x0, g_effect = 0xFF, b_effect = 0x0
 #endif // RGB_CONFIRMATION_BLINKING_TIME > 0
 
+/* Recolor the running effect while CAPS LOCK is ON and restore it afterwards.
+   Only done when the RGB Matrix is really ON (LED_FLAG_ALL): when it is only ON
+   because of CAPS LOCK, everything but the CAPS indicators is black anyway.
+   Nothing is done while the matrix is OFF (rgb_matrix_sethsv() is a no-op then),
+   so the saved color survives until the matrix is turned back ON. */
+static void update_caps_effect_color(void) {
+    if (!rgb_matrix_is_enabled()) {
+        return;
+    }
+    bool caps_color_wanted = host_keyboard_led_state().caps_lock && rgb_matrix_get_flags() == LED_FLAG_ALL;
+    if (caps_color_wanted == caps_color_active) {
+        return;
+    }
+    if (caps_color_wanted) {
+        saved_hue = rgb_matrix_get_hue();
+        saved_sat = rgb_matrix_get_sat();
+        rgb_matrix_sethsv_noeeprom(CAPS_LOCK_HUE, CAPS_LOCK_SAT, rgb_matrix_get_val());
+    } else {
+        rgb_matrix_sethsv_noeeprom(saved_hue, saved_sat, rgb_matrix_get_val());
+    }
+    caps_color_active = caps_color_wanted;
+}
+
 bool led_update_user(led_t led_state) {
     if (led_state.caps_lock) {
         if (!rgb_matrix_is_enabled()) {
@@ -123,6 +157,7 @@ bool led_update_user(led_t led_state) {
         rgb_matrix_set_flags(LED_FLAG_ALL);
         rgb_matrix_disable();
     }
+    update_caps_effect_color();
     return true;
 }
 
@@ -228,6 +263,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 
 bool rgb_matrix_indicators_user() {
+    update_caps_effect_color();
     #if RGB_CONFIRMATION_BLINKING_TIME > 0
     if (effect_started_time > 0) {
         /* Render blinking EFFECTS */
