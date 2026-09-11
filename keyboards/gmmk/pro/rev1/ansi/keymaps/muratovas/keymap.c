@@ -20,7 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // https://github.com/qmk/qmk_firmware/blob/master/docs/feature_macros.md
 enum custom_keycodes {
-    KC_PSCR_LINUX,
+    // QK_USER is where keymap-level keycodes start. Without it the enum would
+    // begin at 0, which is KC_NO - and process_record_user() is reached by
+    // KC_NO too, so every unmapped matrix position would fire the macro.
+    KC_PSCR_LINUX = QK_USER,
 };
 
 // clang-format off
@@ -35,7 +38,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //
     // https://github.com/qmk/qmk_firmware/blob/master/docs/keycodes.md
     
-    [0] = LAYOUT(                                                                                                          //KC_PSCR_LINUX
+    // Fn+PrtScr sends the Linux "select an area" screenshot combo (KC_PSCR_LINUX).
+    [0] = LAYOUT(
         KC_ESC,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_PSCR,    KC_MEDIA_PLAY_PAUSE,
         KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS, KC_EQL,  KC_BSPC,          KC_DEL,
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC, KC_BSLS,          KC_INS,
@@ -45,11 +49,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     [1] = LAYOUT(
-        _______, KC_MYCM, KC_WHOM, KC_CALC, KC_MSEL, KC_MPRV, KC_MNXT, KC_MPLY, KC_MSTP, _______, _______, _______, _______, KC_PSCR,          KC_MUTE,
+        _______, KC_MYCM, KC_WHOM, KC_CALC, KC_MSEL, KC_MPRV, KC_MNXT, KC_MPLY, KC_MSTP, _______, _______, _______, _______, KC_PSCR_LINUX,    KC_MUTE,
         _______, RM_TOGG, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          KC_DEL,
         _______, _______, RM_VALU, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, QK_BOOT,            KC_INS,
         _______, _______, RM_VALD, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,          KC_PGUP,
-        _______,          RM_HUED, RM_HUEU, _______, _______, _______, NK_TOGG, _______, _______, _______, _______,          _______, RM_NEXT, KC_PGDN,
+        _______,          RM_HUED, RM_HUEU, RM_SATD, RM_SATU, _______, NK_TOGG, _______, _______, _______, _______,          _______, RM_NEXT, KC_PGDN,
         _______, _______, _______,                            _______,                            _______, _______, _______, RM_SPDD, RM_PREV, RM_SPDU
     ),
 
@@ -59,7 +63,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #ifdef ENCODER_ENABLE
 bool encoder_update_user(uint8_t index, bool clockwise) {
-    switch (biton32(layer_state)) {
+    switch (get_highest_layer(layer_state)) {
     case 1:
         if (clockwise) {
           tap_code(KC_MNXT);
@@ -90,6 +94,10 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     #endif
     #ifndef CAPS_LOCK_SAT
         #define CAPS_LOCK_SAT 255
+    #endif
+    /* Blank the LEDs after this much inactivity (0 disables it). Set in config.h */
+    #ifndef RGB_IDLE_TIMEOUT
+        #define RGB_IDLE_TIMEOUT 0
     #endif
 #endif // RGB_MATRIX_ENABLE
 
@@ -164,13 +172,10 @@ bool led_update_user(led_t led_state) {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case KC_PSCR_LINUX:
-        if (record->event.pressed) {
-            // when keycode is pressed
-            SEND_STRING(SS_DOWN(X_LSFT) SS_DOWN(X_LCTL) SS_TAP(X_PSCR) SS_UP(X_LSFT) SS_UP(X_LCTL));
-        } else {
-            // when keycode is released
-        }
-        break;
+            if (record->event.pressed) {
+                SEND_STRING(SS_DOWN(X_LSFT) SS_DOWN(X_LCTL) SS_TAP(X_PSCR) SS_UP(X_LSFT) SS_UP(X_LCTL));
+            }
+            return false;
     #ifdef NKRO_ENABLE
     #if RGB_CONFIRMATION_BLINKING_TIME > 0
         case NK_TOGG:
@@ -205,12 +210,20 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             break;
     #endif // RGB_CONFIRMATION_BLINKING_TIME > 0
     #endif // NKRO_ENABLE
-        case RM_NEXT:
-        case RM_PREV:
         case RM_HUEU:
         case RM_HUED:
         case RM_SATU:
         case RM_SATD:
+            if (record->event.pressed && caps_color_active) {
+                /* What the effect is showing right now is the CAPS LOCK color, not
+                   the user's own one. Letting hue/sat through here would recolor
+                   that (and write it to EEPROM), only for the change to be undone
+                   when CAPS LOCK goes OFF and the saved color is restored. */
+                return false;
+            }
+            /* fall through */
+        case RM_NEXT:
+        case RM_PREV:
         case RM_VALU:
         case RM_VALD:
         case RM_SPDU:
@@ -295,6 +308,18 @@ bool rgb_matrix_indicators_user(void) {
         }
     }
     #endif // RGB_CONFIRMATION_BLINKING_TIME > 0
+    #if RGB_IDLE_TIMEOUT > 0
+    if (last_input_activity_elapsed() > (uint32_t)RGB_IDLE_TIMEOUT) {
+        /* Idle: blank the board, but keep CAPS LOCK visible. Done here rather
+           than with QMK's RGB_MATRIX_TIMEOUT, which would stop this function
+           from being called at all - see config.h. */
+        rgb_matrix_set_color_all(0x0, 0x0, 0x0);
+        if (host_keyboard_led_state().caps_lock) {
+            set_rgb_caps_leds();
+        }
+        return false;
+    }
+    #endif // RGB_IDLE_TIMEOUT > 0
     if (rgb_matrix_get_flags() == LED_FLAG_CAPS) {
         rgb_matrix_set_color_all(0x0, 0x0, 0x0);
     }

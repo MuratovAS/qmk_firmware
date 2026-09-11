@@ -32,25 +32,39 @@
     #define RGB_MATRIX_HUE_STEP 4   // 64 hues
     #define RGB_MATRIX_SAT_STEP 8   // 32 saturation levels (default: 16)
     
-    // Upstream renamed these: RGB_DISABLE_TIMEOUT -> RGB_MATRIX_TIMEOUT and
-    // RGB_DISABLE_WHEN_USB_SUSPENDED -> RGB_MATRIX_SLEEP. The old names are gone,
-    // they no longer do anything at all.
-    #define RGB_MATRIX_TIMEOUT 2400000      // 40 minutes (40 * 60 * 1000ms)
-    #define RGB_MATRIX_SLEEP
+    // Turn the LEDs off after this much inactivity. Deliberately NOT QMK's own
+    // RGB_MATRIX_TIMEOUT: that one drops the rendered effect to RGB_MATRIX_NONE,
+    // and rgb_matrix_task() only calls rgb_matrix_indicators_user() when an
+    // effect is running - the CAPS LOCK indicator would go dark with it. keymap.c
+    // blacks the LEDs out itself instead, so the indicator survives.
+    #define RGB_IDLE_TIMEOUT 2400000        // 40 minutes (40 * 60 * 1000ms)
+
+    // Sleep on USB suspend (RGB_DISABLE_WHEN_USB_SUSPENDED in older QMK) is
+    // already ON data-driven: "sleep": true in keyboards/gmmk/pro/info.json.
+
+    // Must name one of the few effects kept below. The effect enum is generated
+    // from whatever survives that list, so a mode index written to EEPROM by an
+    // older firmware now points at a different effect - or past the end of the
+    // list, where nothing renders at all. After flashing, clear the EEPROM once
+    // (hold Escape while plugging the cable in).
+    #define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_SOLID_REACTIVE_MULTIWIDE
 
     // ---- Effect selection -------------------------------------------------
     // Careful: keyboards/gmmk/pro/info.json turns on 43 animations data-driven,
-    // and QMK's generated info_config.h is included BEFORE this file. Deleting a
-    // #define here would remove nothing on its own - the board switches it back
-    // on. So all 49 effects this QMK version ships get undefined first, and only
-    // the block at the bottom turns any back on.
+    // and QMK's generated info_config.h is included BEFORE this file (CONFIG_H
+    // in builddefs/build_keyboard.mk lists it first). Deleting a #define here
+    // would remove nothing on its own - the board switches it back on. So every
+    // effect this QMK version ships is listed below and turned off explicitly.
     //
-    // That makes the bottom block the single source of truth: comment a line out
-    // there and the effect really is gone from the firmware. To add one back,
-    // copy its name from the undef list above it.
+    // The list is the single source of truth: an effect ends up in the firmware
+    // only if its #undef is commented out. To drop one, uncomment its line; to
+    // get one back, comment its line out again.
     // SOLID_COLOR is the one exception - it is always built in and cannot go.
+    //
+    // Kept right now: MULTISPLASH, SOLID_MULTISPLASH, SOLID_REACTIVE_MULTIWIDE.
+    // All three are key-reactive; RGB_MATRIX_KEYPRESSES gets defined for them
+    // automatically by quantum/rgb_matrix/post_config.h, nothing to do here.
 
-    // Off, all of it:
     #undef ENABLE_RGB_MATRIX_ALPHAS_MODS
     #undef ENABLE_RGB_MATRIX_BAND_PINWHEEL_SAT
     #undef ENABLE_RGB_MATRIX_BAND_PINWHEEL_VAL
@@ -85,20 +99,19 @@
     #undef ENABLE_RGB_MATRIX_RAINDROPS
     #undef ENABLE_RGB_MATRIX_RIVERFLOW
     //#undef ENABLE_RGB_MATRIX_SOLID_MULTISPLASH
-    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE //
-    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_CROSS //
-    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTICROSS //
-    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTINEXUS //
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_CROSS
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTICROSS
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTINEXUS
     //#undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTIWIDE
-    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_NEXUS //
-    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_SIMPLE //
-    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_WIDE //
-    #undef ENABLE_RGB_MATRIX_SOLID_SPLASH //
-    #undef ENABLE_RGB_MATRIX_SPLASH //
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_NEXUS
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_SIMPLE
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_WIDE
+    #undef ENABLE_RGB_MATRIX_SOLID_SPLASH
+    #undef ENABLE_RGB_MATRIX_SPLASH
     #undef ENABLE_RGB_MATRIX_STARLIGHT
     #undef ENABLE_RGB_MATRIX_STARLIGHT_DUAL_HUE
     #undef ENABLE_RGB_MATRIX_STARLIGHT_DUAL_SAT
     #undef ENABLE_RGB_MATRIX_STARLIGHT_SMOOTH
-    #undef ENABLE_RGB_MATRIX_TYPING_HEATMAP //
-
+    #undef ENABLE_RGB_MATRIX_TYPING_HEATMAP
 #endif
