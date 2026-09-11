@@ -46,11 +46,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [1] = LAYOUT(
         _______, KC_MYCM, KC_WHOM, KC_CALC, KC_MSEL, KC_MPRV, KC_MNXT, KC_MPLY, KC_MSTP, _______, _______, _______, _______, KC_PSCR,          KC_MUTE,
-        _______, RGB_TOG, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          KC_DEL,
-        _______, _______, RGB_VAI, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, RESET,            KC_INS,
-        _______, _______, RGB_VAD, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,          KC_PGUP,
-        _______,          RGB_HUD, RGB_HUI, _______, _______, _______, NK_TOGG, _______, _______, _______, _______,          _______, RGB_MOD, KC_PGDN,
-        _______, _______, _______,                            _______,                            _______, _______, _______, RGB_SPD, RGB_RMOD, RGB_SPI
+        _______, RM_TOGG, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          KC_DEL,
+        _______, _______, RM_VALU, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, QK_BOOT,            KC_INS,
+        _______, _______, RM_VALD, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,          KC_PGUP,
+        _______,          RM_HUED, RM_HUEU, _______, _______, _______, NK_TOGG, _______, _______, _______, _______,          _______, RM_NEXT, KC_PGDN,
+        _______, _______, _______,                            _______,                            _______, _______, _______, RM_SPDD, RM_PREV, RM_SPDU
     ),
 
 
@@ -205,16 +205,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             break;
     #endif // RGB_CONFIRMATION_BLINKING_TIME > 0
     #endif // NKRO_ENABLE
-        case RGB_MOD:
-        case RGB_RMOD:
-        case RGB_HUI:
-        case RGB_HUD:
-        case RGB_SAI:
-        case RGB_SAD:
-        case RGB_VAI:
-        case RGB_VAD:
-        case RGB_SPI:
-        case RGB_SPD:
+        case RM_NEXT:
+        case RM_PREV:
+        case RM_HUEU:
+        case RM_HUED:
+        case RM_SATU:
+        case RM_SATD:
+        case RM_VALU:
+        case RM_VALD:
+        case RM_SPDU:
+        case RM_SPDD:
             if (record->event.pressed) {
                 if (rgb_matrix_get_flags() != LED_FLAG_ALL) {
                     /* Ignore changes to RGB settings while only it's supposed to be OFF */
@@ -222,7 +222,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
             }
             break;
-        case RGB_TOG:
+        case RM_TOGG:
             if (record->event.pressed) {
                 if (rgb_matrix_is_enabled()) {
                     switch (rgb_matrix_get_flags()) {
@@ -262,7 +262,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 
-bool rgb_matrix_indicators_user() {
+bool rgb_matrix_indicators_user(void) {
     update_caps_effect_color();
     #if RGB_CONFIRMATION_BLINKING_TIME > 0
     if (effect_started_time > 0) {

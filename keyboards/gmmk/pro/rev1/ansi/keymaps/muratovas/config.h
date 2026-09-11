@@ -26,54 +26,79 @@
 // https://github.com/qmk/qmk_firmware/blob/master/docs/feature_rgb_matrix.md
 #ifdef RGB_MATRIX_ENABLE
 
-    // Steps for the RGB_HUI/RGB_HUD, RGB_SAI/RGB_SAD and RGB_VAI/RGB_VAD keys.
+    // Steps for the RM_HUEU/RM_HUED, RM_SATU/RM_SATD and RM_VALU/RM_VALD keys.
     // Hue and saturation are 0-255, so the number of reachable colors is
     // 256 / STEP: with the default step of 8 that is only 32 hues.
     #define RGB_MATRIX_HUE_STEP 4   // 64 hues
     #define RGB_MATRIX_SAT_STEP 8   // 32 saturation levels (default: 16)
     
-    #define RGB_DISABLE_TIMEOUT 2400000     // 40 minutes (40 * 60 * 1000ms)
-    #define RGB_DISABLE_WHEN_USB_SUSPENDED
-    
-    //Soon we need to ENABLE modes by DEFAULT soon as per: https://github.com/qmk/qmk_firmware/pull/13758 Thanks @noroadsleft
-    //#define DISABLE_RGB_MATRIX_SOLID_COLOR             // BUILT IN (MAPPED!) Static single color.
-    //#define DISABLE_RGB_MATRIX_ALPHAS_MODS             // Accenting various keys on the keyboard.
-    //#define DISABLE_RGB_MATRIX_GRADIENT_UP_DOWN        // Top down rainbow!
-    #define DISABLE_RGB_MATRIX_GRADIENT_LEFT_RIGHT       // Left Right Rainbow (the top-down is better imho).
-    //#define DISABLE_RGB_MATRIX_BREATHING               // Built in (MAPPED!)
-    //#define DISABLE_RGB_MATRIX_BAND_SAT                // Single hue band fading saturation scrolling left to right (with white)
-    //#define DISABLE_RGB_MATRIX_BAND_VAL                // Single hue band fading brightness scrolling left to right (with black)
-    #define DISABLE_RGB_MATRIX_BAND_PINWHEEL_SAT         // Single hue 3 blade spinning pinwheel fades sat (RGB_MATRIX_CYCLE_PINWHEEL)
-    #define DISABLE_RGB_MATRIX_BAND_PINWHEEL_VAL         // See above
-    #define DISABLE_RGB_MATRIX_BAND_SPIRAL_SAT           // See abov//#define DISABLE_RGB_MATRIX_BAND_SPIRAL_VAL           // Single hue spinning spiral fades brightness (with black)
-    #define DISABLE_RGB_MATRIX_CYCLE_ALL                 // Full keyboard cycling through rainbow
-    //#define DISABLE_RGB_MATRIX_CYCLE_LEFT_RIGHT        // BUILT IN (MAPPED!) Full Rainbow Left to Right
-    #define DISABLE_RGB_MATRIX_CYCLE_UP_DOWN             // Full gradient scrolling top to bottom
-    #define DISABLE_RGB_MATRIX_CYCLE_OUT_IN              // Rainbow circles coming to center.
-    #define DISABLE_RGB_MATRIX_CYCLE_OUT_IN_DUAL         // Two Rainbow circles coming to 1/3 and 2/3 points.
-    #define DISABLE_RGB_MATRIX_RAINBOW_MOVING_CHEVRON    // Full gradent Chevron shapped scrolling left to right
-    //#define DISABLE_RGB_MATRIX_CYCLE_PINWHEEL          // BUILT IN (MAPPED!) - Consider disabling this - my poor eyes.
-    #define DISABLE_RGB_MATRIX_CYCLE_SPIRAL              // Full gradient spinning spiral around center of keyboard
-    #define DISABLE_RGB_MATRIX_DUAL_BEACON               // Two rainbows spinning around keyboards
-    #define DISABLE_RGB_MATRIX_RAINBOW_BEACON            // Similar to above.
-    #define DISABLE_RGB_MATRIX_RAINBOW_PINWHEELS         // Enough of the spinning rainbows - we get it! :-)
-    #define DISABLE_RGB_MATRIX_RAINDROPS                 // Jellybeans are better.
-    //#define DISABLE_RGB_MATRIX_JELLYBEAN_RAINDROPS     // Randomly changes a single key's hue and saturation - better than above.
-    #define DISABLE_RGB_MATRIX_HUE_BREATHING             // Hue shifts up a slight ammount at the same time, then shifts back
-    #define DISABLE_RGB_MATRIX_HUE_PENDULUM              // Hue shifts up a slight ammount in a wave to the right, then back to the left
-    #define DISABLE_RGB_MATRIX_HUE_WAVE                  // Hue shifts up a slight ammount and then back down in a wave to the right
-    //#define DISABLE_RGB_MATRIX_TYPING_HEATMAP          // Hot keys!
-    //#define DISABLE_RGB_MATRIX_DIGITAL_RAIN            // The Matrix!
-    #define DISABLE_RGB_MATRIX_SOLID_REACTIVE_SIMPLE     // Key hits shown in current hue - all other keys black: wide slightly better imo
-    #define DISABLE_RGB_MATRIX_SOLID_REACTIVE            // Key hits shown in current hue - all other keys shifted hue
-    //#define DISABLE_RGB_MATRIX_SOLID_REACTIVE_WIDE     // Hue & value pulse around a single key hit then fades value out (black otherwise)
-    #define DISABLE_RGB_MATRIX_SOLID_REACTIVE_MULTIWIDE  // same as above but a bit too intense imo.
-    #define DISABLE_RGB_MATRIX_SOLID_REACTIVE_CROSS      // Column and Row single color fade.
-    #define DISABLE_RGB_MATRIX_SOLID_REACTIVE_MULTICROSS // Column and Row single color fade. (Multi-keys)
-    #define DISABLE_RGB_MATRIX_SOLID_REACTIVE_NEXUS      // Hue & value pulse away on the same column and row of key hit then fades
-    #define DISABLE_RGB_MATRIX_SOLID_REACTIVE_MULTINEXUS // Hue & value pulse away on the same column and row of multi-key hit then fades
-    #define DISABLE_RGB_MATRIX_SPLASH                    // Full rainbow pulses from key hit. All else black.
-    #define DISABLE_RGB_MATRIX_MULTISPLASH               // Full rainbow pulses from multi-keys. All else black.
-    #define DISABLE_RGB_MATRIX_SOLID_SPLASH              // Single color pulses from key hit. All else black. (Using solid_reactive_wide instead).
-    #define DISABLE_RGB_MATRIX_SOLID_MULTISPLASH         // Single color pulses from muli-keys. All else black. (Using solid_reactive_wide instead).
+    // Upstream renamed these: RGB_DISABLE_TIMEOUT -> RGB_MATRIX_TIMEOUT and
+    // RGB_DISABLE_WHEN_USB_SUSPENDED -> RGB_MATRIX_SLEEP. The old names are gone,
+    // they no longer do anything at all.
+    #define RGB_MATRIX_TIMEOUT 2400000      // 40 minutes (40 * 60 * 1000ms)
+    #define RGB_MATRIX_SLEEP
+
+    // ---- Effect selection -------------------------------------------------
+    // Careful: keyboards/gmmk/pro/info.json turns on 43 animations data-driven,
+    // and QMK's generated info_config.h is included BEFORE this file. Deleting a
+    // #define here would remove nothing on its own - the board switches it back
+    // on. So all 49 effects this QMK version ships get undefined first, and only
+    // the block at the bottom turns any back on.
+    //
+    // That makes the bottom block the single source of truth: comment a line out
+    // there and the effect really is gone from the firmware. To add one back,
+    // copy its name from the undef list above it.
+    // SOLID_COLOR is the one exception - it is always built in and cannot go.
+
+    // Off, all of it:
+    #undef ENABLE_RGB_MATRIX_ALPHAS_MODS
+    #undef ENABLE_RGB_MATRIX_BAND_PINWHEEL_SAT
+    #undef ENABLE_RGB_MATRIX_BAND_PINWHEEL_VAL
+    #undef ENABLE_RGB_MATRIX_BAND_SAT
+    #undef ENABLE_RGB_MATRIX_BAND_SPIRAL_SAT
+    #undef ENABLE_RGB_MATRIX_BAND_SPIRAL_VAL
+    #undef ENABLE_RGB_MATRIX_BAND_VAL
+    #undef ENABLE_RGB_MATRIX_BREATHING
+    #undef ENABLE_RGB_MATRIX_CYCLE_ALL
+    #undef ENABLE_RGB_MATRIX_CYCLE_LEFT_RIGHT
+    #undef ENABLE_RGB_MATRIX_CYCLE_OUT_IN
+    #undef ENABLE_RGB_MATRIX_CYCLE_OUT_IN_DUAL
+    #undef ENABLE_RGB_MATRIX_CYCLE_PINWHEEL
+    #undef ENABLE_RGB_MATRIX_CYCLE_SPIRAL
+    #undef ENABLE_RGB_MATRIX_CYCLE_UP_DOWN
+    #undef ENABLE_RGB_MATRIX_DIGITAL_RAIN
+    #undef ENABLE_RGB_MATRIX_DUAL_BEACON
+    #undef ENABLE_RGB_MATRIX_FLOWER_BLOOMING
+    #undef ENABLE_RGB_MATRIX_GRADIENT_LEFT_RIGHT
+    #undef ENABLE_RGB_MATRIX_GRADIENT_UP_DOWN
+    #undef ENABLE_RGB_MATRIX_HUE_BREATHING
+    #undef ENABLE_RGB_MATRIX_HUE_PENDULUM
+    #undef ENABLE_RGB_MATRIX_HUE_WAVE
+    #undef ENABLE_RGB_MATRIX_JELLYBEAN_RAINDROPS
+    //#undef ENABLE_RGB_MATRIX_MULTISPLASH
+    #undef ENABLE_RGB_MATRIX_PIXEL_FLOW
+    #undef ENABLE_RGB_MATRIX_PIXEL_FRACTAL
+    #undef ENABLE_RGB_MATRIX_PIXEL_RAIN
+    #undef ENABLE_RGB_MATRIX_RAINBOW_BEACON
+    #undef ENABLE_RGB_MATRIX_RAINBOW_MOVING_CHEVRON
+    #undef ENABLE_RGB_MATRIX_RAINBOW_PINWHEELS
+    #undef ENABLE_RGB_MATRIX_RAINDROPS
+    #undef ENABLE_RGB_MATRIX_RIVERFLOW
+    //#undef ENABLE_RGB_MATRIX_SOLID_MULTISPLASH
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE //
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_CROSS //
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTICROSS //
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTINEXUS //
+    //#undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_MULTIWIDE
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_NEXUS //
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_SIMPLE //
+    #undef ENABLE_RGB_MATRIX_SOLID_REACTIVE_WIDE //
+    #undef ENABLE_RGB_MATRIX_SOLID_SPLASH //
+    #undef ENABLE_RGB_MATRIX_SPLASH //
+    #undef ENABLE_RGB_MATRIX_STARLIGHT
+    #undef ENABLE_RGB_MATRIX_STARLIGHT_DUAL_HUE
+    #undef ENABLE_RGB_MATRIX_STARLIGHT_DUAL_SAT
+    #undef ENABLE_RGB_MATRIX_STARLIGHT_SMOOTH
+    #undef ENABLE_RGB_MATRIX_TYPING_HEATMAP //
+
 #endif
